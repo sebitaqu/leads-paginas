@@ -137,6 +137,21 @@ function detectarCategoria(tags: Record<string, string>): string | null {
   return null;
 }
 
+function buildQueryParaTag(
+  tag: { key: string; value: string },
+  lat: number,
+  lon: number,
+  radius: number
+): string {
+  const around = `(around:${radius},${lat},${lon})`;
+  return `[out:json][timeout:25];
+(
+  node["${tag.key}"="${tag.value}"]${around};
+  way["${tag.key}"="${tag.value}"]${around};
+);
+out center tags;`;
+}
+
 function buildOverpassQuery(
   rubro: string,
   lat: number,
@@ -144,31 +159,10 @@ function buildOverpassQuery(
   radius: number
 ): string {
   const around = `(around:${radius},${lat},${lon})`;
-
-  if (rubro === TODOS_RUBROS) {
-    const clausulas = tagsUnicos()
-      .flatMap((tag) => [
-        `  node["${tag.key}"="${tag.value}"]${around};`,
-        `  way["${tag.key}"="${tag.value}"]${around};`,
-      ])
-      .join("\n");
-
-    return `[out:json][timeout:60];
-(
-${clausulas}
-);
-out center tags;`;
-  }
-
   const tag = RUBRO_TAGS[normalizar(rubro)];
 
   if (tag) {
-    return `[out:json][timeout:25];
-(
-  node["${tag.key}"="${tag.value}"]${around};
-  way["${tag.key}"="${tag.value}"]${around};
-);
-out center tags;`;
+    return buildQueryParaTag(tag, lat, lon, radius);
   }
 
   // Sin mapeo conocido: busca por nombre entre categorías comunes de negocio.
@@ -185,14 +179,7 @@ out center tags;`;
 out center tags;`;
 }
 
-export async function searchOsmPlaces(
-  rubro: string,
-  lat: number,
-  lon: number,
-  radius: number
-): Promise<OsmPlace[]> {
-  const query = buildOverpassQuery(rubro, lat, lon, radius);
-
+async function ejecutarOverpassQuery(query: string): Promise<OverpassElement[]> {
   const res = await fetch(OVERPASS_URL, {
     method: "POST",
     headers: {
@@ -208,8 +195,11 @@ export async function searchOsmPlaces(
   }
 
   const data: OverpassResponse = await res.json();
+  return data.elements;
+}
 
-  return data.elements
+function parsearElementos(elements: OverpassElement[]): OsmPlace[] {
+  return elements
     .filter((el) => el.tags?.name)
     .map((el) => {
       const tags = el.tags!;
@@ -228,6 +218,54 @@ export async function searchOsmPlaces(
         categoria: detectarCategoria(tags),
       };
     });
+}
+
+/**
+ * Para "todos los rubros" se ejecutan varias queries chicas (una por tag),
+ * secuenciales con throttle entre cada una, en vez de una sola query gigante
+ * que satura el servidor público de Overpass y termina en timeout 504.
+ */
+async function searchTodosLosRubros(
+  lat: number,
+  lon: number,
+  radius: number
+): Promise<OsmPlace[]> {
+  const vistos = new Map<string, OsmPlace>();
+  const tags = tagsUnicos();
+
+  for (let i = 0; i < tags.length; i++) {
+    if (i > 0) await throttle();
+
+    const query = buildQueryParaTag(tags[i], lat, lon, radius);
+
+    try {
+      const elements = await ejecutarOverpassQuery(query);
+      for (const place of parsearElementos(elements)) {
+        vistos.set(place.osmId, place);
+      }
+    } catch {
+      // Una query individual puede fallar (timeout, servidor ocupado);
+      // se omite ese tag y se sigue con el resto en vez de abortar todo.
+      continue;
+    }
+  }
+
+  return Array.from(vistos.values());
+}
+
+export async function searchOsmPlaces(
+  rubro: string,
+  lat: number,
+  lon: number,
+  radius: number
+): Promise<OsmPlace[]> {
+  if (rubro === TODOS_RUBROS) {
+    return searchTodosLosRubros(lat, lon, radius);
+  }
+
+  const query = buildOverpassQuery(rubro, lat, lon, radius);
+  const elements = await ejecutarOverpassQuery(query);
+  return parsearElementos(elements);
 }
 
 export { throttle };
