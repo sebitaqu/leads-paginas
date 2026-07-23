@@ -6,10 +6,11 @@ const RADIO_DEFECTO_METROS = 5000;
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { query, location, radius } = body as {
+  const { query, location, radius, rubro } = body as {
     query?: string;
     location?: string;
     radius?: number;
+    rubro?: string;
   };
 
   if (!query || !location) {
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
       create: {
         osmId: lugar.osmId,
         nombre: lugar.nombre,
-        rubro: query,
+        rubro: rubro ?? query,
         direccion: lugar.direccion,
         comuna: lugar.comuna,
         telefono: lugar.telefono,

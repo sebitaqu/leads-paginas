@@ -13,9 +13,95 @@ const RADIOS = [
   { label: "10 km", metros: 10000 },
 ];
 
+// value debe coincidir con una clave de RUBRO_TAGS en src/lib/osm.ts
+const RUBROS = [
+  { label: "Restaurantes", value: "restaurantes" },
+  { label: "Panaderías", value: "panaderia" },
+  { label: "Peluquerías / Barberías", value: "peluquerias" },
+  { label: "Cafeterías", value: "cafeteria" },
+  { label: "Almacenes / Minimarkets", value: "almacen" },
+  { label: "Ferreterías", value: "ferreteria" },
+  { label: "Farmacias", value: "farmacias" },
+  { label: "Veterinarias", value: "veterinarias" },
+  { label: "Gimnasios", value: "gimnasios" },
+  { label: "Talleres mecánicos", value: "taller" },
+  { label: "Lavanderías", value: "lavanderia" },
+  { label: "Florerías", value: "floreria" },
+  { label: "Librerías", value: "libreria" },
+  { label: "Tiendas de ropa", value: "ropa" },
+  { label: "Dentistas", value: "dentistas" },
+  { label: "Kinesiólogos / Fisioterapeutas", value: "kinesiologo" },
+  { label: "Bares", value: "bares" },
+  { label: "Pastelerías", value: "pasteleria" },
+  { label: "Supermercados", value: "supermercados" },
+  { label: "Zapaterías", value: "zapateria" },
+  { label: "Carnicerías", value: "carniceria" },
+  { label: "Ópticas", value: "optica" },
+  { label: "Hoteles", value: "hoteles" },
+  { label: "Inmobiliarias", value: "inmobiliaria" },
+  { label: "Abogados", value: "abogados" },
+  { label: "Contadores", value: "contador" },
+];
+
+// Las 52 comunas de la Región Metropolitana de Santiago.
+const COMUNAS = [
+  "Alhué",
+  "Buin",
+  "Calera de Tango",
+  "Cerrillos",
+  "Cerro Navia",
+  "Colina",
+  "Conchalí",
+  "Curacaví",
+  "El Bosque",
+  "El Monte",
+  "Estación Central",
+  "Huechuraba",
+  "Independencia",
+  "Isla de Maipo",
+  "La Cisterna",
+  "La Florida",
+  "La Granja",
+  "La Pintana",
+  "La Reina",
+  "Lampa",
+  "Las Condes",
+  "Lo Barnechea",
+  "Lo Espejo",
+  "Lo Prado",
+  "Macul",
+  "Maipú",
+  "María Pinto",
+  "Melipilla",
+  "Ñuñoa",
+  "Padre Hurtado",
+  "Paine",
+  "Pedro Aguirre Cerda",
+  "Peñaflor",
+  "Peñalolén",
+  "Pirque",
+  "Providencia",
+  "Pudahuel",
+  "Puente Alto",
+  "Quilicura",
+  "Quinta Normal",
+  "Recoleta",
+  "Renca",
+  "San Bernardo",
+  "San Joaquín",
+  "San José de Maipo",
+  "San Miguel",
+  "San Pedro",
+  "San Ramón",
+  "Santiago",
+  "Talagante",
+  "Til Til",
+  "Vitacura",
+];
+
 export function SearchForm({ onSearchComplete }: SearchFormProps) {
-  const [rubro, setRubro] = useState("");
-  const [ubicacion, setUbicacion] = useState("");
+  const [rubro, setRubro] = useState(RUBROS[0].value);
+  const [comuna, setComuna] = useState(COMUNAS.find((c) => c === "Santiago") ?? COMUNAS[0]);
   const [radio, setRadio] = useState(5000);
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState<string | null>(null);
@@ -27,14 +113,17 @@ export function SearchForm({ onSearchComplete }: SearchFormProps) {
     setError(null);
     setResultado(null);
 
+    const rubroLabel = RUBROS.find((r) => r.value === rubro)?.label ?? rubro;
+    const location = `${comuna}, Santiago, Chile`;
+
     try {
       const res = await fetch("/api/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query: rubro,
-          location: ubicacion,
-          rubro,
+          location,
+          rubro: rubroLabel,
           radius: radio,
         }),
       });
@@ -61,25 +150,31 @@ export function SearchForm({ onSearchComplete }: SearchFormProps) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
       <div className="flex-1">
         <label className="block text-sm font-medium text-gray-700">Rubro</label>
-        <input
-          type="text"
-          required
+        <select
           value={rubro}
           onChange={(e) => setRubro(e.target.value)}
-          placeholder="ej: restaurantes"
           className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
-        />
+        >
+          {RUBROS.map((r) => (
+            <option key={r.value} value={r.value}>
+              {r.label}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="flex-1">
         <label className="block text-sm font-medium text-gray-700">Ubicación</label>
-        <input
-          type="text"
-          required
-          value={ubicacion}
-          onChange={(e) => setUbicacion(e.target.value)}
-          placeholder="ej: Providencia, Santiago"
+        <select
+          value={comuna}
+          onChange={(e) => setComuna(e.target.value)}
           className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
-        />
+        >
+          {COMUNAS.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700">Radio</label>

@@ -46,6 +46,10 @@ const RUBRO_TAGS: Record<string, { key: string; value: string }> = {
   abogado: { key: "office", value: "lawyer" },
   abogados: { key: "office", value: "lawyer" },
   contador: { key: "office", value: "accountant" },
+  almacen: { key: "shop", value: "convenience" },
+  minimarket: { key: "shop", value: "convenience" },
+  kinesiologo: { key: "healthcare", value: "physiotherapist" },
+  fisioterapeuta: { key: "healthcare", value: "physiotherapist" },
 };
 
 function normalizar(texto: string): string {
