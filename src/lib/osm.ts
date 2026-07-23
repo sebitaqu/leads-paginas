@@ -52,6 +52,22 @@ const RUBRO_TAGS: Record<string, { key: string; value: string }> = {
   fisioterapeuta: { key: "healthcare", value: "physiotherapist" },
 };
 
+export const TODOS_RUBROS = "__todos__";
+
+function tagsUnicos(): { key: string; value: string }[] {
+  const vistos = new Set<string>();
+  const unicos: { key: string; value: string }[] = [];
+
+  for (const tag of Object.values(RUBRO_TAGS)) {
+    const clave = `${tag.key}=${tag.value}`;
+    if (vistos.has(clave)) continue;
+    vistos.add(clave);
+    unicos.push(tag);
+  }
+
+  return unicos;
+}
+
 function normalizar(texto: string): string {
   return texto
     .toLowerCase()
@@ -102,6 +118,23 @@ export interface OsmPlace {
   telefono: string | null;
   email: string | null;
   tieneWebsite: boolean;
+  categoria: string | null;
+}
+
+const CLAVES_CATEGORIA = [
+  "amenity",
+  "shop",
+  "office",
+  "leisure",
+  "tourism",
+  "healthcare",
+];
+
+function detectarCategoria(tags: Record<string, string>): string | null {
+  for (const clave of CLAVES_CATEGORIA) {
+    if (tags[clave]) return tags[clave];
+  }
+  return null;
 }
 
 function buildOverpassQuery(
@@ -110,8 +143,24 @@ function buildOverpassQuery(
   lon: number,
   radius: number
 ): string {
-  const tag = RUBRO_TAGS[normalizar(rubro)];
   const around = `(around:${radius},${lat},${lon})`;
+
+  if (rubro === TODOS_RUBROS) {
+    const clausulas = tagsUnicos()
+      .flatMap((tag) => [
+        `  node["${tag.key}"="${tag.value}"]${around};`,
+        `  way["${tag.key}"="${tag.value}"]${around};`,
+      ])
+      .join("\n");
+
+    return `[out:json][timeout:60];
+(
+${clausulas}
+);
+out center tags;`;
+  }
+
+  const tag = RUBRO_TAGS[normalizar(rubro)];
 
   if (tag) {
     return `[out:json][timeout:25];
@@ -176,6 +225,7 @@ export async function searchOsmPlaces(
         telefono: tags.phone ?? tags["contact:phone"] ?? null,
         email: tags.email ?? tags["contact:email"] ?? null,
         tieneWebsite: Boolean(tags.website || tags["contact:website"]),
+        categoria: detectarCategoria(tags),
       };
     });
 }

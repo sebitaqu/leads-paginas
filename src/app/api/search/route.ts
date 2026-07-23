@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { geocodeLocation, searchOsmPlaces, throttle } from "@/lib/osm";
+import { geocodeLocation, searchOsmPlaces, throttle, TODOS_RUBROS } from "@/lib/osm";
 
 const RADIO_DEFECTO_METROS = 5000;
 
@@ -81,7 +81,10 @@ export async function POST(request: NextRequest) {
       create: {
         osmId: lugar.osmId,
         nombre: lugar.nombre,
-        rubro: rubro ?? query,
+        rubro:
+          query === TODOS_RUBROS
+            ? lugar.categoria ?? rubro ?? query
+            : rubro ?? query,
         direccion: lugar.direccion,
         comuna: lugar.comuna,
         telefono: lugar.telefono,
