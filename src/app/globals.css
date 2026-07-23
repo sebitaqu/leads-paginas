@@ -1,26 +1,65 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-ink: #17241f;
+  --color-muted: #5b6b63;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f5f6f3;
+  --color-border: #e3e6e0;
+
+  --color-primary: #0f6b5c;
+  --color-primary-hover: #0b5346;
+  --color-primary-foreground: #ffffff;
+
+  --color-whatsapp: #1fae5f;
+  --color-whatsapp-hover: #178f4d;
+
+  --color-amber: #b8722a;
+  --color-amber-soft: #fbeee1;
+  --color-blue: #3a5f8a;
+  --color-blue-soft: #e7eef6;
+  --color-violet: #6a4fae;
+  --color-violet-soft: #ece7f8;
+  --color-emerald: #0f6b5c;
+  --color-emerald-soft: #e1efec;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-ink: var(--color-ink);
+  --color-muted: var(--color-muted);
+  --color-surface: var(--color-surface);
+  --color-surface-muted: var(--color-surface-muted);
+  --color-border: var(--color-border);
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-foreground: var(--color-primary-foreground);
+  --color-whatsapp: var(--color-whatsapp);
+  --color-whatsapp-hover: var(--color-whatsapp-hover);
+  --color-amber: var(--color-amber);
+  --color-amber-soft: var(--color-amber-soft);
+  --color-blue: var(--color-blue);
+  --color-blue-soft: var(--color-blue-soft);
+  --color-violet: var(--color-violet);
+  --color-violet-soft: var(--color-violet-soft);
+  --color-emerald: var(--color-emerald);
+  --color-emerald-soft: var(--color-emerald-soft);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-display: var(--font-space-grotesk);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-feature-settings: "cv11", "ss01";
+}
+
+::selection {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
